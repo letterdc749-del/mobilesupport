@@ -253,17 +253,22 @@ local S = {
         Priority = "Closest",
     },
     SilentAim  = { Enabled = false },
+    AntiAim    = { Enabled = false, Conn = nil },
     Wallbang   = { Enabled = false, Highlights = {}, Params = nil },
     Noclip     = { Enabled = false, Key = Enum.KeyCode.V },
     Fly        = { Enabled = false, Speed = 60, Body = nil, Gyro = nil, Key = Enum.KeyCode.F },
     Movement   = { Speed = 16 },
     Gravity    = { Value = 196.2 },
+    InfiniteStamina = { Enabled = false },
+    InstantInteract = { Enabled = false },
     Tracers    = { Enabled = false, Lines = {} },
     Crosshair  = { Enabled = false, Style = "Dot" },
     Fullbright = { Enabled = false, OrigAmb = nil, OrigOut = nil },
     Fog        = { Removed = false, Start = nil, End = nil, Color = nil },
     Overlay    = { FPS = false, Ping = false, Coords = false, Clock = false, HPBar = false },
     FreeCam    = { Enabled = false, Speed = 60, Key = Enum.KeyCode.C },
+    DrunkMode  = { Enabled = false, Intensity = 1.0 },
+    Mimic      = { Enabled = false, Target = nil, Conn = nil },
     KillFeed   = { Enabled = false },
     Spectate   = { Target = nil },
     DeathSpawn = { Enabled = false, BankEnabled = false, BarberEnabled = false, GunEnabled = false, DealerEnabled = false, BlackMarketEnabled = false, MarshmellowEnabled = false, LastPos = nil, QuickPos = nil, QuickName = nil, _oneShot = nil, _oneShotName = "" },
@@ -1030,7 +1035,22 @@ do
 end
 
 Spacer(CP)
-Section(CP, "Wallbang")
+Section(CP, "Anti-Aim")
+Toggle(CP, "Anti-Aim", "Spins your character to deflect hits [ spins HRP ]", "AntiAim", "Enabled", function(on)
+    if on then
+        local spinAngle = 0
+        S.AntiAim.Conn = RunService.RenderStepped:Connect(function(dt)
+            if not S.AntiAim.Enabled then return end
+            local char = LP.Character
+            local root = char and char:FindFirstChild("HumanoidRootPart")
+            if not root then return end
+            spinAngle = (spinAngle + dt * 720) % 360
+            root.CFrame = CFrame.new(root.Position) * CFrame.Angles(0, math.rad(spinAngle), 0)
+        end)
+    else
+        if S.AntiAim.Conn then S.AntiAim.Conn:Disconnect(); S.AntiAim.Conn=nil end
+    end
+end)
 Toggle(CP, "Wallbang Indicator", "Highlights penetrable parts in orange", "Wallbang", "Enabled", nil)
 
 Spacer(CP)
@@ -1248,6 +1268,20 @@ Section(MP, "Noclip")
 Toggle(MP, "Enable Noclip", "Phase through walls  [ V ]", "Noclip", "Enabled", nil)
 
 Spacer(MP)
+Section(MP, "Utility")
+Toggle(MP, "Infinite Stamina", "Keeps stamina bar full at all times", "InfiniteStamina", "Enabled", nil)
+Toggle(MP, "Instant Interact",  "Removes hold time from proximity prompts", "InstantInteract", "Enabled", function(on)
+    -- Apply/remove to all existing prompts in workspace
+    for _,v in ipairs(workspace:GetDescendants()) do
+        if v:IsA("ProximityPrompt") then
+            if on then
+                pcall(function() v.HoldDuration=0 end)
+            end
+        end
+    end
+end)
+
+Spacer(MP)
 Section(MP, "Free Camera")
 Toggle(MP, "Freecam Mode", "Detach camera from character  [ C ]", "FreeCam", "Enabled", function(on)
     if on then
@@ -1260,6 +1294,13 @@ Toggle(MP, "Freecam Mode", "Detach camera from character  [ C ]", "FreeCam", "En
     end
 end)
 Slider(MP, "Freecam Speed", "", 10, 300, 60, function(v) S.FreeCam.Speed = v end)
+
+Spacer(MP)
+Section(MP, "Drunk Mode")
+Toggle(MP, "Drunk Mode", "Sways your camera like you're drunk", "DrunkMode", "Enabled", function(on)
+    notify("Drunk Mode", on and "You feelin it 🍺" or "Sobered up", on and "success" or nil)
+end)
+Slider(MP, "Intensity", "", 0.1, 3.0, 1.0, function(v) S.DrunkMode.Intensity=v end)
 
 -------- TELEPORT --------
 local TP = makePage("Teleport")
@@ -1384,6 +1425,18 @@ Button(TP,"📍  Save Current Position","Saves your XYZ to the custom inputs",ni
     end
 end)
 
+Button(TP,"📋  Copy Coords","Copy current XYZ to clipboard",nil,function()
+    local char=LP.Character; local root=char and char:FindFirstChild("HumanoidRootPart")
+    if root then
+        local p=root.Position
+        local str=string.format("%.1f, %.1f, %.1f",p.X,p.Y,p.Z)
+        pcall(function() setclipboard(str) end)
+        -- Fallback for executors that use toclipboard
+        pcall(function() toclipboard(str) end)
+        notify("Copied",str,"success")
+    end
+end)
+
 Spacer(TP)
 Section(TP, "Quick Teleport")
 
@@ -1408,6 +1461,10 @@ local QUICK_LOCS = {
     { name="Dealer",       emoji="💊", pos=Vector3.new(731,   7,   432)   },
     { name="Black Market", emoji="🕶",  pos=Vector3.new(663.2, 6.9, 260.6) },
     { name="Marshmellow",  emoji="☁",  pos=Vector3.new(622,   7,   602)   },
+    { name="YGZ TURF",     emoji="🟢", pos=Vector3.new(7.9,   20,  285.0) },
+    { name="OGZ TURF",     emoji="🔵", pos=Vector3.new(108.4, 22,  -512.0)},
+    { name="OGZ STUDIO",   emoji="🔵", pos=Vector3.new(143.7, 22,  -507.1)},
+    { name="DOA TURF",     emoji="🔴", pos=Vector3.new(-331.0,20,  -465.9)},
 }
 
 for _,loc in ipairs(QUICK_LOCS) do
@@ -1568,6 +1625,88 @@ end
 refreshPlayers()
 Players.PlayerAdded:Connect(refreshPlayers)
 Players.PlayerRemoving:Connect(function() task.wait(0.1); refreshPlayers() end)
+
+Spacer(PP)
+Section(PP, "Mimic")
+
+local mimicFrame=Instance.new("Frame",PP); mimicFrame.Size=UDim2.new(1,0,0,0)
+mimicFrame.BackgroundTransparency=1; mimicFrame.AutomaticSize=Enum.AutomaticSize.Y
+local mimicLayout=Instance.new("UIListLayout",mimicFrame); mimicLayout.Padding=UDim.new(0,4); mimicLayout.SortOrder=Enum.SortOrder.LayoutOrder
+
+local mimicStatusLbl=Instance.new("TextLabel",PP)
+mimicStatusLbl.Text="Not mimicking anyone"; mimicStatusLbl.Font=Enum.Font.Gotham; mimicStatusLbl.TextSize=10
+mimicStatusLbl.TextColor3=T.mute; mimicStatusLbl.BackgroundTransparency=1
+mimicStatusLbl.Size=UDim2.new(1,0,0,14); mimicStatusLbl.TextXAlignment=Enum.TextXAlignment.Left
+
+local function refreshMimicList()
+    for _,c in ipairs(mimicFrame:GetChildren()) do if c:IsA("TextButton") or c:IsA("Frame") then c:Destroy() end end
+    for _,player in ipairs(Players:GetPlayers()) do
+        if player==LP then continue end
+        local btn=Instance.new("TextButton",mimicFrame); btn.Size=UDim2.new(1,0,0,36)
+        btn.BackgroundColor3=T.card; btn.BorderSizePixel=0; btn.AutoButtonColor=false; btn.Text=""
+        Instance.new("UICorner",btn).CornerRadius=UDim.new(0,8)
+        local stroke=Instance.new("UIStroke",btn); stroke.Color=T.border; stroke.Thickness=1
+
+        local nameL=Instance.new("TextLabel",btn); nameL.Text=player.DisplayName
+        nameL.Font=Enum.Font.GothamBold; nameL.TextSize=12; nameL.TextColor3=T.text
+        nameL.BackgroundTransparency=1; nameL.Size=UDim2.new(1,-80,1,0); nameL.Position=UDim2.new(0,12,0,0)
+        nameL.TextXAlignment=Enum.TextXAlignment.Left
+
+        local selLbl=Instance.new("TextLabel",btn); selLbl.Font=Enum.Font.GothamBold; selLbl.TextSize=10
+        selLbl.BackgroundTransparency=1; selLbl.Size=UDim2.new(0,60,1,0); selLbl.Position=UDim2.new(1,-68,0,0)
+        selLbl.TextXAlignment=Enum.TextXAlignment.Center
+
+        local isSel=S.Mimic.Target==player
+        selLbl.Text=isSel and "✓ Mimicking" or "Mimic"
+        selLbl.TextColor3=isSel and T.green or T.mute
+        stroke.Color=isSel and T.green or T.border
+
+        btn.MouseButton1Click:Connect(function()
+            if S.Mimic.Target==player then
+                S.Mimic.Target=nil; S.Mimic.Enabled=false
+                if S.Mimic.Conn then S.Mimic.Conn:Disconnect(); S.Mimic.Conn=nil end
+                mimicStatusLbl.Text="Not mimicking anyone"; mimicStatusLbl.TextColor3=T.mute
+                notify("Mimic","Stopped",nil)
+            else
+                S.Mimic.Target=player; S.Mimic.Enabled=true
+                mimicStatusLbl.Text="Mimicking: "..player.DisplayName; mimicStatusLbl.TextColor3=T.green
+                if S.Mimic.Conn then S.Mimic.Conn:Disconnect(); S.Mimic.Conn=nil end
+                S.Mimic.Conn=RunService.Heartbeat:Connect(function()
+                    if not S.Mimic.Enabled or not S.Mimic.Target then return end
+                    local tchar=S.Mimic.Target.Character
+                    local troot=tchar and tchar:FindFirstChild("HumanoidRootPart")
+                    local thum=tchar and tchar:FindFirstChildOfClass("Humanoid")
+                    local char=LP.Character
+                    local root=char and char:FindFirstChild("HumanoidRootPart")
+                    local hum=char and char:FindFirstChildOfClass("Humanoid")
+                    if not troot or not root or not hum or not thum then return end
+                    -- Copy position offset (mirrored — face opposite direction)
+                    local mirroredCF=CFrame.new(troot.Position)*CFrame.Angles(0,troot.CFrame.LookVector.X*math.pi,0)
+                    root.CFrame=root.CFrame:Lerp(mirroredCF,0.2)
+                    root.AssemblyLinearVelocity=troot.AssemblyLinearVelocity
+                    -- Copy walk speed
+                    hum.WalkSpeed=thum.WalkSpeed
+                    -- Copy jump
+                    if thum.Jump then hum.Jump=true end
+                end)
+                notify("Mimic","Now mimicking "..player.DisplayName,"success")
+            end
+            refreshMimicList()
+        end)
+        btn.MouseEnter:Connect(function() if S.Mimic.Target~=player then TweenService:Create(btn,TweenInfo.new(0.1),{BackgroundColor3=T.raised}):Play() end end)
+        btn.MouseLeave:Connect(function() TweenService:Create(btn,TweenInfo.new(0.1),{BackgroundColor3=T.card}):Play() end)
+    end
+end
+refreshMimicList()
+Players.PlayerAdded:Connect(function() task.wait(0.5); refreshMimicList() end)
+Players.PlayerRemoving:Connect(function(p)
+    if S.Mimic.Target==p then
+        S.Mimic.Target=nil; S.Mimic.Enabled=false
+        if S.Mimic.Conn then S.Mimic.Conn:Disconnect(); S.Mimic.Conn=nil end
+        mimicStatusLbl.Text="Not mimicking anyone"; mimicStatusLbl.TextColor3=T.mute
+    end
+    task.wait(0.1); refreshMimicList()
+end)
 
 -------- AUTOFARM (RECORDER) --------
 local RP = makePage("Recorder")
@@ -1757,6 +1896,10 @@ Button(SP,"⏏  Unload C3 Menu","Remove all hooks and destroy GUI",T.card,functi
             for _,p in ipairs(c:GetDescendants()) do if p:IsA("BasePart") then pcall(function() p.CanCollide=true end) end end
         end
         S.Noclip.Enabled=false; S.Fly.Enabled=false; S.FreeCam.Enabled=false
+        S.AntiAim.Enabled=false
+        if S.AntiAim.Conn then S.AntiAim.Conn:Disconnect(); S.AntiAim.Conn=nil end
+        S.Mimic.Enabled=false
+        if S.Mimic.Conn then S.Mimic.Conn:Disconnect(); S.Mimic.Conn=nil end
         if S.Fly.Body then pcall(function() S.Fly.Body:Destroy() end); S.Fly.Body=nil end
         if S.Fly.Gyro then pcall(function() S.Fly.Gyro:Destroy() end); S.Fly.Gyro=nil end
         pcall(function() Cam.CameraType=Enum.CameraType.Custom; Cam.CameraSubject=LP.Character and LP.Character:FindFirstChildOfClass("Humanoid") or nil; UserInputService.MouseBehavior=Enum.MouseBehavior.Default end)
@@ -2348,6 +2491,23 @@ RunService.RenderStepped:Connect(function()
 end)
 
 ----------------------------------------------------------------
+-- DRUNK MODE
+----------------------------------------------------------------
+local drunkTime = 0
+RunService.RenderStepped:Connect(function(dt)
+    if not S.DrunkMode.Enabled then return end
+    if S.FreeCam.Enabled then return end -- don't conflict with freecam
+    drunkTime = drunkTime + dt
+    local i = S.DrunkMode.Intensity
+    -- Sway camera with multiple sine waves for organic feel
+    local swayX = math.sin(drunkTime * 1.1) * 4 * i + math.sin(drunkTime * 2.3) * 1.5 * i
+    local swayY = math.sin(drunkTime * 0.8) * 2 * i + math.cos(drunkTime * 1.7) * 1 * i
+    local tilt  = math.sin(drunkTime * 0.6) * 3 * i
+    Cam.CFrame = Cam.CFrame
+        * CFrame.Angles(math.rad(swayY), math.rad(swayX * 0.3), math.rad(tilt))
+end)
+
+----------------------------------------------------------------
 -- FREECAM SYSTEM
 ----------------------------------------------------------------
 local fcCF=CFrame.new(0,10,0); local fcYaw=0; local fcPitch=0
@@ -2380,6 +2540,90 @@ connect(UserInputService.InputBegan, function(inp,gpe)
             Cam.CameraType=Enum.CameraType.Custom
             Cam.CameraSubject=LP.Character and LP.Character:FindFirstChildOfClass("Humanoid") or nil
             UserInputService.MouseBehavior=Enum.MouseBehavior.Default; notify("Freecam","OFF",nil)
+        end
+    end
+end)
+
+----------------------------------------------------------------
+-- INFINITE STAMINA
+-- Hooks the internal remote that drains stamina and blocks it
+----------------------------------------------------------------
+task.spawn(function()
+    -- Scan all RemoteEvents and RemoteFunctions for stamina-related ones
+    -- then block them from firing when InfiniteStamina is on
+    local function hookRemote(remote)
+        local name = remote.Name:lower()
+        if name:find("stam") or name:find("sprint") or name:find("energy") or name:find("drain") or name:find("tire") then
+            -- Wrap FireServer to block drain calls
+            local oldFire = remote.FireServer
+            remote.FireServer = function(self, ...)
+                if S.InfiniteStamina.Enabled then return end
+                return oldFire(self, ...)
+            end
+        end
+    end
+
+    -- Hook existing remotes
+    for _,v in ipairs(game:GetDescendants()) do
+        if v:IsA("RemoteEvent") or v:IsA("RemoteFunction") then
+            pcall(hookRemote, v)
+        end
+    end
+    -- Hook new remotes as they appear
+    game.DescendantAdded:Connect(function(v)
+        if v:IsA("RemoteEvent") or v:IsA("RemoteFunction") then
+            pcall(hookRemote, v)
+        end
+    end)
+
+    -- Also try to find and freeze any local stamina value
+    RunService.Heartbeat:Connect(function()
+        if not S.InfiniteStamina.Enabled then return end
+        local char = LP.Character
+        if not char then return end
+        for _,v in ipairs(char:GetDescendants()) do
+            if (v:IsA("NumberValue") or v:IsA("IntValue")) then
+                local n = v.Name:lower()
+                if n:find("stam") or n:find("sprint") or n:find("energy") then
+                    pcall(function()
+                        if v.Value < v.Parent:FindFirstChild("Max"..v.Name) and v.Parent:FindFirstChild("Max"..v.Name) then
+                            v.Value = v.Parent:FindFirstChild("Max"..v.Name).Value
+                        elseif v.Value < 100 then
+                            v.Value = 100
+                        end
+                    end)
+                end
+            end
+        end
+        -- Try common attribute names
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        if hum then
+            for _,attr in ipairs({"Stamina","MaxStamina","Sprint","SprintStamina","Energy","Endurance"}) do
+                pcall(function()
+                    local v = hum:GetAttribute(attr)
+                    if type(v)=="number" and v < 95 then
+                        hum:SetAttribute(attr, 100)
+                    end
+                end)
+            end
+        end
+    end)
+end)
+
+----------------------------------------------------------------
+-- INSTANT INTERACT (proximity prompts)
+----------------------------------------------------------------
+-- Apply to new prompts as they appear and keep existing ones at 0
+workspace.DescendantAdded:Connect(function(v)
+    if S.InstantInteract.Enabled and v:IsA("ProximityPrompt") then
+        pcall(function() v.HoldDuration=0 end)
+    end
+end)
+RunService.Heartbeat:Connect(function()
+    if not S.InstantInteract.Enabled then return end
+    for _,v in ipairs(workspace:GetDescendants()) do
+        if v:IsA("ProximityPrompt") and v.HoldDuration>0 then
+            pcall(function() v.HoldDuration=0 end)
         end
     end
 end)
@@ -2438,12 +2682,15 @@ HKLayout.SortOrder=Enum.SortOrder.LayoutOrder; HKLayout.VerticalAlignment=Enum.V
 
 local function keyName(kc) return tostring(kc):gsub("Enum.KeyCode.","") end
 
+local BLUE = Color3.fromRGB(50, 150, 255)
+local BLUE_DIM = Color3.fromRGB(10, 40, 80)
+
 local HOTKEYS = {
-    { label="Toggle Menu", getKey=function() return keyName(S.GUI.ToggleKey) end },
-    { label="Aimlock",     getKey=function() return "Hold Q" end },
-    { label="Noclip",      getKey=function() return "V" end },
-    { label="Fly",         getKey=function() return "F" end },
-    { label="Freecam",     getKey=function() return "C" end },
+    { label="Toggle Menu", getKey=function() return keyName(S.GUI.ToggleKey) end, isActive=function() return S.GUI.Visible end },
+    { label="Aimlock",     getKey=function() return "Hold Q" end,                 isActive=function() return S.Aimlock.Enabled end },
+    { label="Noclip",      getKey=function() return "V" end,                      isActive=function() return S.Noclip.Enabled end },
+    { label="Fly",         getKey=function() return "F" end,                      isActive=function() return S.Fly.Enabled end },
+    { label="Freecam",     getKey=function() return "C" end,                      isActive=function() return S.FreeCam.Enabled end },
 }
 
 local hkRows={}
@@ -2456,19 +2703,37 @@ for i,hk in ipairs(HOTKEYS) do
     keyBadge.Size=UDim2.new(0,70,1,0); keyBadge.TextXAlignment=Enum.TextXAlignment.Center
     keyBadge.BackgroundTransparency=0.3; keyBadge.BorderSizePixel=0; keyBadge.ZIndex=10
     Instance.new("UICorner",keyBadge).CornerRadius=UDim.new(0,4)
-    Instance.new("UIStroke",keyBadge).Color=T.accentD
+    local badgeStroke=Instance.new("UIStroke",keyBadge); badgeStroke.Color=T.accentD
     keyBadge.TextStrokeTransparency=0.5; keyBadge.TextStrokeColor3=T.black
     local lbl=Instance.new("TextLabel",row)
     lbl.Font=Enum.Font.Gotham; lbl.TextSize=10; lbl.Text=hk.label
     lbl.TextColor3=T.sub; lbl.BackgroundTransparency=1
     lbl.Size=UDim2.new(1,-78,1,0); lbl.Position=UDim2.new(0,76,0,0)
     lbl.TextXAlignment=Enum.TextXAlignment.Left; lbl.TextStrokeTransparency=0.5; lbl.TextStrokeColor3=T.black; lbl.ZIndex=10
-    table.insert(hkRows,{badge=keyBadge,hk=hk})
+    table.insert(hkRows,{badge=keyBadge,stroke=badgeStroke,lbl=lbl,hk=hk})
 end
 
 task.spawn(function()
     while SG.Parent do
-        for _,r in ipairs(hkRows) do r.badge.Text=r.hk.getKey() end
-        task.wait(1)
+        for _,r in ipairs(hkRows) do
+            r.badge.Text=r.hk.getKey()
+            local active = r.hk.isActive and r.hk.isActive()
+            if active then
+                TweenService:Create(r.badge,TweenInfo.new(0.15),{
+                    TextColor3=BLUE,
+                    BackgroundColor3=Color3.fromRGB(5,20,50),
+                }):Play()
+                r.stroke.Color=BLUE
+                TweenService:Create(r.lbl,TweenInfo.new(0.15),{TextColor3=BLUE}):Play()
+            else
+                TweenService:Create(r.badge,TweenInfo.new(0.15),{
+                    TextColor3=T.accent,
+                    BackgroundColor3=Color3.fromRGB(20,10,12),
+                }):Play()
+                r.stroke.Color=T.accentD
+                TweenService:Create(r.lbl,TweenInfo.new(0.15),{TextColor3=T.sub}):Play()
+            end
+        end
+        task.wait(0.1)
     end
 end)

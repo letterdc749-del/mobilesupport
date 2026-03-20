@@ -1,6 +1,6 @@
 --[[
   ╔═══════════════════════════════════════════╗
-  ║           C3 MENU  v6.0                   ║
+  ║           SPOOFER HUB v6.0                   ║
   ║       Premium Dev Tool Edition            ║
   ╚═══════════════════════════════════════════╝
   
@@ -42,8 +42,8 @@ local function showDeathScreen(seconds, locationName, displayName)
 
     task.spawn(function()
         local waited=0
-        while not _G.C3_SG and waited<5 do task.wait(0.05); waited=waited+0.05 end
-        local sg=_G.C3_SG; if not sg then return end
+        while not _G.SPOOFHUB_SG and waited<5 do task.wait(0.05); waited=waited+0.05 end
+        local sg=_G.SPOOFHUB_SG; if not sg then return end
 
         local overlay=Instance.new("Frame",sg)
         overlay.Name="DeathScreen"; overlay.Size=UDim2.new(1,0,1,0)
@@ -56,9 +56,9 @@ local function showDeathScreen(seconds, locationName, displayName)
         scan.Size=UDim2.new(1,0,0,2); scan.BackgroundColor3=Color3.fromRGB(180,0,0)
         scan.BorderSizePixel=0; scan.ZIndex=1000; scan.BackgroundTransparency=0.4
 
-        -- C3 title
+        -- SPOOFHUB title
         local title=Instance.new("TextLabel",overlay)
-        title.Text="C3"; title.Font=Enum.Font.GothamBold; title.TextSize=72
+        title.Text="SPOOFHUB"; title.Font=Enum.Font.GothamBold; title.TextSize=72
         title.TextColor3=Color3.fromRGB(200,30,40); title.BackgroundTransparency=1
         title.Size=UDim2.new(1,0,0,80); title.Position=UDim2.new(0,0,0.22,0)
         title.TextXAlignment=Enum.TextXAlignment.Center; title.ZIndex=1000
@@ -276,7 +276,7 @@ local S = {
     Screenshot = { Enabled = false },
     AutoRespawn = { Enabled = false },
     RespawnPlayer = { Enabled = false, Target = nil },
-    NameChanger  = { Enabled = false, Custom = "C3 User",  Orig = nil },
+    NameChanger  = { Enabled = false, Custom = "SPOOFHUB",  Orig = nil },
     UserChanger  = { Enabled = false, Custom = LP.Name,    Orig = nil },
     TagChanger   = { Enabled = false, Custom = "DEV",      Orig = nil },
     GUI = {
@@ -346,7 +346,7 @@ end
 -- ROOT SCREENGUI
 ----------------------------------------------------------------
 local SG = Instance.new("ScreenGui")
-SG.Name           = "C3Menu"
+SG.Name           = "SPOOFHUBMenu"
 SG.ResetOnSpawn   = false
 SG.ZIndexBehavior = Enum.ZIndexBehavior.Global
 SG.IgnoreGuiInset = true
@@ -354,7 +354,7 @@ SG.DisplayOrder   = 9999
 SG.Parent         = LP:WaitForChild("PlayerGui")
 
 -- Make SG accessible to teleport overlay
-_G.C3_SG = SG
+_G.SPOOFHUB_SG = SG
 
 -- Disable Roblox's default "YOU DIED" screen
 local StarterGui = game:GetService("StarterGui")
@@ -621,7 +621,7 @@ local Logo = Instance.new("Frame", NavCol)
 Logo.Size = UDim2.new(1,0,0,44); Logo.BackgroundTransparency = 1
 
 local LogoText = Instance.new("TextLabel", Logo)
-LogoText.Text = "C3"; LogoText.Font = Enum.Font.GothamBold; LogoText.TextSize = 22
+LogoText.Text = "SPOOFHUB"; LogoText.Font = Enum.Font.GothamBold; LogoText.TextSize = 22
 LogoText.TextColor3 = T.accent; LogoText.BackgroundTransparency = 1
 LogoText.Size = UDim2.new(1,0,0,24); LogoText.Position = UDim2.new(0,0,0,6)
 LogoText.TextXAlignment = Enum.TextXAlignment.Center
@@ -1250,9 +1250,9 @@ Toggle(MP, "Enable Fly", "Free flight with WASD + Space [ F ]", "Fly", "Enabled"
     if not root or not hum then return end
     if on then
         hum.PlatformStand=true
-        local bv=Instance.new("BodyVelocity",root); bv.Name="C3FlyVel"
+        local bv=Instance.new("BodyVelocity",root); bv.Name="SPOOFHUBFlyVel"
         bv.Velocity=Vector3.zero; bv.MaxForce=Vector3.new(1e5,1e5,1e5)
-        local bg=Instance.new("BodyGyro",root); bg.Name="C3FlyGyro"
+        local bg=Instance.new("BodyGyro",root); bg.Name="SPOOFHUBFlyGyro"
         bg.MaxTorque=Vector3.new(1e5,1e5,1e5); bg.P=1e4; bg.CFrame=root.CFrame
         S.Fly.Body=bv; S.Fly.Gyro=bg
     else
@@ -1460,13 +1460,17 @@ local QUICK_LOCS = {
     { name="Main Gun",     emoji="🔫", pos=Vector3.new(216,   6,   -173)  },
     { name="Dealer",       emoji="💊", pos=Vector3.new(731,   7,   432)   },
     { name="Black Market", emoji="🕶",  pos=Vector3.new(663.2, 6.9, 260.6) },
-    { name="Marshmellow",  emoji="☁",  pos=Vector3.new(622,   7,   602)   },
+    { name="Marshmellow",  emoji="☁",  pos=Vector3.new(502.9, 3.5, 608.8)   },
     { name="YGZ TURF",     emoji="🟢", pos=Vector3.new(7.9,   20,  285.0) },
-    { name="OGZ TURF",     emoji="🔵", pos=Vector3.new(108.4, 22,  -512.0)},
-    { name="OGZ STUDIO",   emoji="🔵", pos=Vector3.new(143.7, 22,  -507.1)},
-    { name="DOA TURF",     emoji="🔴", pos=Vector3.new(-331.0,20,  -465.9)},
+    { name="OGZ TURF",     emoji="🔵", pos=Vector3.new(108.4, 22,  -512.0) },
+    { name="OGZ STUDIO",   emoji="🔵", pos=Vector3.new(143.7, 22,  -507.1) },
+    { name="DOA TURF",     emoji="🔴", pos=Vector3.new(-331.0, 20,  -465.9) },
+    { name="Second Gun",    emoji="🔫", pos=Vector3.new(-465,  7,  347) },
+    { name="Casino Apartments", emoji="🎲", pos=Vector3.new(1164, 7, -263) },
+    { name="Casino",  emoji="🎰", pos=Vector3.new(1129, 6,  -36) },
+    { name="Potato Deli",       emoji="🥔", pos=Vector3.new(-776, 7,  -196) },
+    { name="Potato Maker",      emoji="🏭", pos=Vector3.new(-493, 7,  -443) },
 }
-
 for _,loc in ipairs(QUICK_LOCS) do
     Button(TP,loc.emoji.."  "..loc.name,"Die and respawn at "..loc.name,nil,function()
         quickTeleport(loc.pos,loc.name)
@@ -1887,7 +1891,7 @@ end
 
 Spacer(SP)
 Section(SP, "Danger Zone")
-Button(SP,"⏏  Unload C3 Menu","Remove all hooks and destroy GUI",T.card,function()
+Button(SP,"⏏  Unload SPOOFHUB","Remove all hooks and destroy GUI",T.card,function()
     pcall(function()
         S.NameChanger.Enabled=false; S.UserChanger.Enabled=false; S.TagChanger.Enabled=false
         local c=LP.Character
@@ -1920,7 +1924,7 @@ Button(SP,"⏏  Unload C3 Menu","Remove all hooks and destroy GUI",T.card,functi
         if _deathCountConn then _deathCountConn:Disconnect(); _deathCountConn=nil end
     end)
     TweenService:Create(Main,TweenInfo.new(0.3,Enum.EasingStyle.Quart),{BackgroundTransparency=1,Position=Main.Position+UDim2.new(0,0,0,16)}):Play()
-    task.wait(0.32); pcall(function() SG:Destroy() end); _G.C3_SG=nil; print("[C3 Menu] Unloaded.")
+    task.wait(0.32); pcall(function() SG:Destroy() end); _G.SPOOFHUB_SG=nil; print("[SPOOFHUB] Unloaded.")
 end)
 
 Button(SP,"🚪  Leave Game","Return to Roblox home screen",T.card,function()
@@ -2015,7 +2019,7 @@ local function buildESP(player)
     local hl=Instance.new("Highlight"); hl.FillColor=S.ESP.Color; hl.OutlineColor=S.ESP.Color
     hl.FillTransparency=0.72; hl.OutlineTransparency=0.1; hl.Adornee=char
     hl.DepthMode=Enum.HighlightDepthMode.AlwaysOnTop; hl.Parent=char; S.ESP.Highlights[player]=hl
-    local bb=Instance.new("BillboardGui"); bb.Name="C3ESP"; bb.Size=UDim2.new(0,90,0,32)
+    local bb=Instance.new("BillboardGui"); bb.Name="SPOOFHUBESP"; bb.Size=UDim2.new(0,90,0,32)
     bb.StudsOffset=Vector3.new(0,2.8,0); bb.AlwaysOnTop=true; bb.MaxDistance=S.ESP.Distance
     bb.Adornee=head; bb.Parent=head; S.ESP.Tags[player]=bb
     local nameTag=Instance.new("TextLabel",bb); nameTag.Text=player.Name; nameTag.Font=Enum.Font.GothamBold; nameTag.TextSize=11
@@ -2029,7 +2033,7 @@ local function buildESP(player)
     hpLbl.BackgroundTransparency=1; hpLbl.Size=UDim2.new(1,0,0,10); hpLbl.Position=UDim2.new(0,0,0,22); hpLbl.TextXAlignment=Enum.TextXAlignment.Center
     hpLbl.TextStrokeTransparency=0.4; hpLbl.TextStrokeColor3=T.black
     if S.ESP.ShowBox then
-        local boxBB=Instance.new("BillboardGui"); boxBB.Name="C3Box"; boxBB.Size=UDim2.new(0,0,0,0)
+        local boxBB=Instance.new("BillboardGui"); boxBB.Name="SPOOFHUBBox"; boxBB.Size=UDim2.new(0,0,0,0)
         boxBB.SizeOffset=Vector2.new(3.5,5); boxBB.AlwaysOnTop=true; boxBB.MaxDistance=S.ESP.Distance
         local root=char:FindFirstChild("HumanoidRootPart"); boxBB.Adornee=root or char; boxBB.Parent=char
         local boxFrame=Instance.new("Frame",boxBB); boxFrame.Size=UDim2.new(1,0,1,0); boxFrame.BackgroundTransparency=1; boxFrame.BorderSizePixel=0
@@ -2657,7 +2661,7 @@ SG.AncestryChanged:Connect(function()
     for _,line in pairs(S.Tracers.Lines) do pcall(function() line:Remove() end) end
     clearWallbang()
     for _,conn in pairs(S.ESP.HPConns) do pcall(function() conn:Disconnect() end) end
-    disconnectAll(); _G.C3_SG=nil
+    disconnectAll(); _G.SPOOFHUB_SG=nil
 end)
 
 Players.PlayerRemoving:Connect(function(player)
@@ -2673,8 +2677,8 @@ task.spawn(function()
 end)
 
 task.wait(0.5)
-notify("C3 Menu","v6.0 loaded  •  "..(IS_MOBILE and "Mobile" or "PC").." mode","success")
-print("[C3 Menu] ✓ v6.0")
+notify("SPOOFHUB Menu","v6.0 loaded  •  "..(IS_MOBILE and "Mobile" or "PC").." mode","success")
+print("[SPOOFHUB Menu] ✓ v6.0")
 
 ----------------------------------------------------------------
 -- HOTKEY OVERLAY  (bottom left)
@@ -2763,9 +2767,9 @@ Instance.new("UICorner", MenuBtn).CornerRadius = UDim.new(0, 12)
 local mbStroke = Instance.new("UIStroke", MenuBtn)
 mbStroke.Color = T.accent; mbStroke.Thickness = 1.5; mbStroke.Transparency = 0
 
--- C3 text inside
+-- SPOOFHUB text inside
 local mbLabel = Instance.new("TextLabel", MenuBtn)
-mbLabel.Text = "C3"
+mbLabel.Text = "SPOOFHUB"
 mbLabel.Font = Enum.Font.GothamBold
 mbLabel.TextSize = 16
 mbLabel.TextColor3 = T.accent
